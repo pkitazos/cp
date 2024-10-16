@@ -1,35 +1,37 @@
 class Constraint:
+    """
+    @param should be a tuple with exactly 2 items - the participants involved
+    @param `constraint_fn` should be a function that takes a dictionary with the participants as keys
+    @param `constraint_str` should be a string representation for the constraint
+    """
 
-    def __init__(self, participants, constraint_fn, constraint_str):
-        """
-        @param should be a tuple with exactly 2 items - the participants involved
-        @param `constraint_fn` should be a function that takes a dictionary with the participants as keys
-        @param `constraint_str` should be a string representation for the constraint
-        """
-        if len(participants) != 2:
+    def __init__(self, paricipants, constraint_fn, constraint_str):
+        if len(paricipants) != 2:
             raise Exception("Exactly 2 participants must be provided")
-
-        self.participants = participants
-        self.fn = constraint_fn
-        self.s = constraint_str
+        self._paricipants = paricipants
+        self._fn = constraint_fn
+        self._s = constraint_str
 
     def get_participants(self):
-        return self.participants
+        return self._paricipants
 
     def get_other_participant(self, p1):
-        return [p for p in self.participants if p != p1][0]
+        return [p for p in self._paricipants if p != p1][0]
 
-    def satisfy(self, p):
-        return self.fn(p)
+    def satsfity(self, p):
+        return self._fn(p)
 
     def __str__(self):
-        return f"{self.s}"
+        return f"{self._s}"
 
     def __repr__(self):
-        return f"{self.s}"
+        return f"{self._s}"
 
     def __eq__(self, other):
-        return self.s == other.s
+        return self._s == other._s
+
+    def __hash__(self):
+        return hash(self._s)
 
 
 def ac(X, D, C):
@@ -63,7 +65,7 @@ def ac(X, D, C):
 
             remove_me = True
             for value_y in D_new[y]:
-                cond = c.satisfy({x: value_x, y: value_y})
+                cond = c.satsfity({x: value_x, y: value_y})
                 print(f"{x}:\t{value_x}\n{y}:\t{value_y}\n{c} = {cond}\n")
                 if cond:
                     print(label)
@@ -87,16 +89,20 @@ def ac(X, D, C):
             affected_arcs = []
             for ci in C:
                 if x in ci.get_participants():
+                    # all constraints involving x
                     y = c.get_other_participant(x)
                     for cj in C:
-                        if x in cj.get_participants():
-                            affected_arcs.append((x, cj))
-            print(f"domain changed\nmust recheck arcs: {affected_arcs}\n")
+                        if y in cj.get_participants() and x in cj.get_participants():
+                            # all of other participants' constraints involving x
+                            affected_arcs.append((y, cj))
+
+            print(f"domain changed\nmust recheck arcs: {set(affected_arcs)}\n")
             todo.extend(
-                [arc for arc in affected_arcs if arc not in todo]
+                [arc for arc in set(affected_arcs) if arc not in todo]
             )  # make sure no duplicates are added
 
-        print(f"D': {D_new}\n")
+        print(f"D': {D_new}")
+        print(f"Q: {todo}\n")
 
 
 if __name__ == "__main__":
